@@ -71,9 +71,9 @@ server.on("connection", (ws, request) => {
             Users.free[request.headers['sec-websocket-key']].other = data.secWebsocketId
             Users.free[data.secWebsocketId].status = STATUS.answering
             ws.sendTo.all('user-list', Users.free)
-            ws.sendTo.user(data.secWebsocketId, 'invited', { 
-                'remote_player_key': request.headers['sec-websocket-key'] ,
-                'remote_player_name':  Users.free[request.headers['sec-websocket-key']].nick
+            ws.sendTo.user(data.secWebsocketId, 'invited', {
+                'remote_player_key': request.headers['sec-websocket-key'],
+                'remote_player_name': Users.free[request.headers['sec-websocket-key']].nick
             })
         })
 
@@ -88,7 +88,11 @@ server.on("connection", (ws, request) => {
             ws.sendTo.all('user-list', Users.free)
             console.log('timeout');
         })
-
+        ws.event('my_position', (data) => {
+            let other = Users.playinng[request.headers['sec-websocket-key']].other
+            ws.sendTo.user(other, 'his_position', data)
+        })
+        
         ws.event('answering', (data) => {
             if (typeof Users.free[request.headers['sec-websocket-key']] == 'undefined') return
             if (typeof Users.free[data.remote_player_key] == 'undefined') return
