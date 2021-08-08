@@ -1,7 +1,7 @@
 const MessageHandler = require('./MessageHandler')
 let WebSocket = require("ws")
 
-let server = new WebSocket.Server({ port: 3000 })
+let server = new WebSocket.Server({ port: process.env.PORT || 3000 })
 console.log('running in *:3000');
 const STATUS = {
     'free': 1,
