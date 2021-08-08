@@ -1,5 +1,5 @@
 class MessageHandler {
-    constructor(server, ws, request, WebSocket, roomList) {
+    constructor(server, ws, request, WebSocket) {
         this.server = server
         this.ws = ws
         this.secWebsocketKey = request.headers['sec-websocket-key']
@@ -7,7 +7,11 @@ class MessageHandler {
         this.server.users[this.secWebsocketKey] = this.ws
         this.WebSocket = WebSocket
         this.rooms = {}
-        this.roomList = roomList
+        this.roomList = null
+    }
+    user(secWebsocketKey, eventName, data) {
+        let info = { eventName, data }
+        this.server.users[secWebsocketKey].send(JSON.stringify(info));
     }
     me(eventName, data) {
         let info = { eventName, data }
@@ -29,7 +33,11 @@ class MessageHandler {
             }
         });
     }
+    setRoomList(roomList){
+        this.roomList = roomList
+    }
     room(listId, eventName, data) {
+        if(this.roomList == null) return
         let info = { eventName, data }
         this.roomList[listId].map(key => {
             this.server.users[key].send(JSON.stringify(info));

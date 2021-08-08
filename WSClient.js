@@ -1,3 +1,4 @@
+import Lobby from './Lobby.js';
 let socket = new WebSocket("ws://127.0.0.1:3000");
 class Sender {
     constructor(socket) {
@@ -50,3 +51,6 @@ socket.onclose = function (event) {
 socket.onerror = function (error) {
     console.log(`[error] ${error.message}`);
 };
+
+let lobby = new Lobby()
+lobby.show()
