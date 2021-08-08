@@ -18,13 +18,13 @@ server.on("connection", (ws, request) => {
         // ws.sendTo.others('message', json.data)
         ///////////////////////////////////////////////////////////////
         ws.event('login', (string) => {
-            ws.sendTo.me('user-list', ["samu", "maty"]) //a si mismo
+            ws.sendTo.me('user-list', ["samu", "maty"]) // Test data
         })
         ws.event('message', (string) => {
             console.log(string);
         })
         ws.event('get-rooms', (string) => {
-            ws.sendTo.me('available-rooms', getOpenRooms())//a si mismo
+            ws.sendTo.me('available-rooms', getOpenRooms()) // A si mismo
         })
         ws.event('close-rooms', (roomId) => {//to close all room boooo!
             console.log(getOpenRooms());
