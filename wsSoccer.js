@@ -18,8 +18,30 @@ const Users = {
         // }
     },
 }
+
 server.on("connection", (ws, request) => {
     ws.sendTo = new MessageHandler(server, ws, request, WebSocket)
+    let disconnect = () => {
+        if (!!Users.free[request.headers['sec-websocket-key']]){
+            if (!!Users.free[request.headers['sec-websocket-key']].other){
+                let other = Users.free[request.headers['sec-websocket-key']].other
+                Users.free[other].status = STATUS.free
+            }
+            delete Users.free[request.headers['sec-websocket-key']]
+        }
+            
+        if (!!Users.playinng[request.headers['sec-websocket-key']]){
+            delete Users.playinng[request.headers['sec-websocket-key']]
+        }
+            
+        console.log(`Disconet ${request.headers['sec-websocket-key']}`);
+        ws.sendTo.all('user-list', Users.free)
+    }
+    
+    ws.on('close', function close() {
+        disconnect()
+    })
+
     ws.on('message', function incoming(data) {
         let json = JSON.parse(data)
         ws.event = (eventName, eventHandler) => {
@@ -38,14 +60,27 @@ server.on("connection", (ws, request) => {
                 status: STATUS.free,
                 nick: data.name
             }
-            ws.sendTo.me('user-list', Users.free)
+            ws.sendTo.all('user-list', Users.free)
         })
         ws.event('invite', (data) => {
+            console.log(data);
             if (typeof Users.free[request.headers['sec-websocket-key']] == 'undefined') return
             if (typeof Users.free[data.secWebsocketId] == 'undefined') return
             Users.free[request.headers['sec-websocket-key']].status = STATUS.inviting
+            Users.free[request.headers['sec-websocket-key']].other = data.secWebsocketId
             Users.free[data.secWebsocketId].status = STATUS.answering
             ws.sendTo.all('user-list', Users.free)
+        })
+        ws.event('no-answering', (data) => {
+            console.log('timeout');
+            if (typeof Users.free[request.headers['sec-websocket-key']] == 'undefined') return
+            if (typeof Users.free[data.secWebsocketId] == 'undefined') return
+            Users.free[secWSK].status = STATUS.free
+            let secWSK = Users.free[request.headers['sec-websocket-key']].other
+            Users.free[secWSK].status = STATUS.free
+            delete Users.free[request.headers['sec-websocket-key']].other
+            ws.sendTo.all('user-list', Users.free)
+            ws.sendTo.user(secWSK, 'close-question', Users.free)
         })
         ws.event('answering', (data) => {
             if (typeof Users.free[request.headers['sec-websocket-key']] == 'undefined') return
@@ -63,6 +98,7 @@ server.on("connection", (ws, request) => {
                     'start',
                     { user: Users.playinng[request.headers['sec-websocket-key']] })
             } else {
+                delete Users.free[request.headers['sec-websocket-key']].other
                 ws.sendTo.all('user-list', Users.free)
                 ws.sendTo.user(data.secWebsocketId, 'rejected', {})
             }
