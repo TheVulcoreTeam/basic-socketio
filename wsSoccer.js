@@ -88,9 +88,9 @@ server.on("connection", (ws, request) => {
             ws.sendTo.all('user-list', Users.free)
             console.log('timeout');
         })
-        ws.event('my_position', (data) => {
+        ws.event('my_impulse', (data) => {
             let other = Users.playinng[request.headers['sec-websocket-key']].other
-            ws.sendTo.user(other, 'his_position', data)
+            ws.sendTo.user(other, 'his_impulse', data)
         })
 
         ws.event('answering', (data) => {
@@ -102,8 +102,8 @@ server.on("connection", (ws, request) => {
                 Users.playinng[request.headers['sec-websocket-key']] = Users.free[request.headers['sec-websocket-key']]
                 Users.playinng[request.headers['sec-websocket-key']].other = data.remote_player_key
                 Users.playinng[request.headers['sec-websocket-key']].position = (Math.random() > .5) ? true : false
-                Users.playinng[data.remote_player_key].position = !Users.playinng[request.headers['sec-websocket-key']].position
                 Users.playinng[data.remote_player_key] = Users.free[data.remote_player_key]
+                Users.playinng[data.remote_player_key].position = !Users.playinng[request.headers['sec-websocket-key']].position
                 delete Users.free[request.headers['sec-websocket-key']]
                 delete Users.free[data.remote_player_key]
                 ws.sendTo.all('user-list', Users.free)
