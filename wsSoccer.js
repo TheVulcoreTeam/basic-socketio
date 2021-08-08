@@ -62,6 +62,7 @@ server.on("connection", (ws, request) => {
             }
             ws.sendTo.all('user-list', Users.free)
         })
+
         ws.event('invite', (data) => {
             console.log(data);
             if (typeof Users.free[request.headers['sec-websocket-key']] == 'undefined') return
@@ -70,9 +71,24 @@ server.on("connection", (ws, request) => {
             Users.free[request.headers['sec-websocket-key']].other = data.secWebsocketId
             Users.free[data.secWebsocketId].status = STATUS.answering
             ws.sendTo.all('user-list', Users.free)
-            ws.sendTo.user(data.secWebsocketId, 'invited', { remote_plater: request.headers['sec-websocket-key'] })
+            ws.sendTo.user(data.secWebsocketId, 'invited', { 
+                'remote_player_key': request.headers['sec-websocket-key'] ,
+                'remote_player_name':  Users.free[request.headers['sec-websocket-key']].nick
+            })
         })
-        ws.event('no-answering', (data) => {
+        ws.event('reject', (data) => {
+            let secWSK = Users.free[data.user].other
+            delete Users.free[data.user].other
+            if (!!secWSK && !!Users.free[secWSK]) {
+                Users.free[secWSK].status = STATUS.free
+            }
+            Users.free[data.user].status = STATUS.free
+            ws.sendTo.all('user-list', Users.free)
+            ws.sendTo.user(data.user, 'rejected', {})
+            console.log("reject");
+        })
+
+        ws.event('timeout', (data) => {
             let secWSK = Users.free[request.headers['sec-websocket-key']].other
             delete Users.free[request.headers['sec-websocket-key']].other
             if (!!secWSK && !!Users.free[secWSK]) {
