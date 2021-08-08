@@ -76,17 +76,6 @@ server.on("connection", (ws, request) => {
                 'remote_player_name':  Users.free[request.headers['sec-websocket-key']].nick
             })
         })
-        ws.event('reject', (data) => {
-            let secWSK = Users.free[data.user].other
-            delete Users.free[data.user].other
-            if (!!secWSK && !!Users.free[secWSK]) {
-                Users.free[secWSK].status = STATUS.free
-            }
-            Users.free[data.user].status = STATUS.free
-            ws.sendTo.all('user-list', Users.free)
-            ws.sendTo.user(data.user, 'rejected', {})
-            console.log("reject");
-        })
 
         ws.event('timeout', (data) => {
             let secWSK = Users.free[request.headers['sec-websocket-key']].other
@@ -99,26 +88,30 @@ server.on("connection", (ws, request) => {
             ws.sendTo.all('user-list', Users.free)
             console.log('timeout');
         })
+
         ws.event('answering', (data) => {
             if (typeof Users.free[request.headers['sec-websocket-key']] == 'undefined') return
-            if (typeof Users.free[data.secWebsocketId] == 'undefined') return
+            if (typeof Users.free[data.remote_player_key] == 'undefined') return
             Users.free[request.headers['sec-websocket-key']].status = (data.ok) ? STATUS.playing : STATUS.free
-            Users.free[data.secWebsocketId].status = (data.ok) ? STATUS.playing : STATUS.free
+            Users.free[data.remote_player_key].status = (data.ok) ? STATUS.playing : STATUS.free
             if (data.ok) {
                 Users.playinng[request.headers['sec-websocket-key']] = Users.free[request.headers['sec-websocket-key']]
-                Users.playinng[data.secWebsocketId] = Users.free[data.secWebsocketId]
+                Users.playinng[request.headers['sec-websocket-key']].other = data.remote_player_key
+                Users.playinng[data.remote_player_key] = Users.free[data.remote_player_key]
                 delete Users.free[request.headers['sec-websocket-key']]
-                delete Users.free[data.secWebsocketId]
+                delete Users.free[data.remote_player_key]
                 ws.sendTo.all('user-list', Users.free)
-                ws.sendTo.me('start', { user: Users.playinng[data.secWebsocketId] })
-                ws.sendTo.user(data.secWebsocketId,
+                ws.sendTo.me('start', { user: Users.playinng[data.remote_player_key] })
+                ws.sendTo.user(data.remote_player_key, 'hide-background', {})
+                ws.sendTo.user(data.remote_player_key,
                     'start',
                     { user: Users.playinng[request.headers['sec-websocket-key']] })
+                console.log(Users.playinng);
             } else {
                 delete Users.free[request.headers['sec-websocket-key']].other
                 ws.sendTo.all('user-list', Users.free)
-                ws.sendTo.user(data.secWebsocketId, 'rejected', {})
             }
+            ws.sendTo.user(data.remote_player_key, 'close-timer', {})
         })
     });
 });
